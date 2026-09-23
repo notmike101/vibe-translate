@@ -105,8 +105,8 @@ enum ChatGPTAuth {
               let expires = body["expires_in"] as? NSNumber else {
             throw TranslationError.malformedResponse("ChatGPT sign-in")
         }
-        let accountID = accountID(in: access)
-            ?? (body["id_token"] as? String).flatMap { accountID(in: $0) }
+        let accountID = Self.accountID(in: access)
+            ?? (body["id_token"] as? String).flatMap { Self.accountID(in: $0) }
             ?? previous?.accountID
         guard let accountID, !accountID.isEmpty else {
             throw TranslationError.malformedResponse("ChatGPT account identity")
