@@ -36,7 +36,19 @@ struct ChatGPTProviderTests {
         MockURLProtocol.requestHandler = { request in
             precondition(request.url?.absoluteString == "https://auth.openai.com/api/accounts/deviceauth/usercode")
             precondition(request.httpMethod == "POST")
-            let body = try JSONSerialization.jsonObject(with: request.httpBody!) as! [String: String]
+            let bodyData: Data
+            if let body = request.httpBody {
+                bodyData = body
+            } else {
+                let stream = request.httpBodyStream!
+                stream.open()
+                defer { stream.close() }
+                var bytes = [UInt8](repeating: 0, count: 1024)
+                let count = stream.read(&bytes, maxLength: bytes.count)
+                precondition(count > 0)
+                bodyData = Data(bytes.prefix(count))
+            }
+            let body = try JSONSerialization.jsonObject(with: bodyData) as! [String: String]
             precondition(body["client_id"] == ChatGPTAuth.clientID)
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             return (response, Data(#"{"device_auth_id":"device","user_code":"ABCD-EFGH","interval":"7"}"#.utf8))
